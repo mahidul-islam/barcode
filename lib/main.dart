@@ -14,7 +14,7 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  String result = '';
+  String result = '8901030740398';
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,6 +38,7 @@ class _MainAppState extends State<MainApp> {
             child: const Text('Open Scanner'),
           ),
           const SizedBox(
+            width: double.maxFinite,
             height: 20,
           ),
           Text('Barcode result: $result'),
@@ -62,7 +63,7 @@ class ApiCallWidget extends StatefulWidget {
 }
 
 class _ApiCallWidgetState extends State<ApiCallWidget> {
-  Future<String> getData(String code) async {
+  Future<String> getUPCDatabaseData(String code) async {
     final dio = Dio();
     Response response = await dio.get(
       'https://api.upcdatabase.org/product/$code',
@@ -76,14 +77,56 @@ class _ApiCallWidgetState extends State<ApiCallWidget> {
     return response.data.toString();
   }
 
-  String data = 'NO DATA';
+  Future<String> getSearchUPCData(String code) async {
+    final dio = Dio();
+    Response response = await dio.get(
+      'http://www.searchupc.com/handlers/upcsearch.ashx',
+      queryParameters: {
+        'request_type': 3,
+        'access_token': '99ED432B-94DB-490D-AF68-2CEAB5AA2330',
+        'upc': code
+      },
+    );
+    return response.data.toString();
+  }
+
+  Future<String> getOpenFoodFactData(String code) async {
+    final dio = Dio();
+    try {
+      Response response = await dio.get(
+        'https://world.openfoodfacts.org/api/v2/product/$code.json',
+      );
+      return response.data.toString();
+    } catch (e) {
+      debugPrint(':: ${e.toString()}');
+      return e.toString();
+    }
+  }
+
+  String upcDatabaseResult = 'NO DATA';
+  String searchUPCResult = 'NO Data';
+  String openFoodFactResult = 'NO Data';
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Text(
-          'Api result: $data',
+          'UPC database result: $upcDatabaseResult',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(
+          height: 20,
+        ),
+        Text(
+          'Search UPC result: $searchUPCResult',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(
+          height: 20,
+        ),
+        Text(
+          'Open Food Fact result: $openFoodFactResult',
           textAlign: TextAlign.center,
         ),
         const SizedBox(
@@ -91,11 +134,36 @@ class _ApiCallWidgetState extends State<ApiCallWidget> {
         ),
         ElevatedButton(
           onPressed: () async {
-            data = 'Loading';
-            data = await getData(widget.code);
+            upcDatabaseResult = 'Loading';
+            setState(() {});
+            upcDatabaseResult = await getUPCDatabaseData(widget.code);
             setState(() {});
           },
-          child: const Text('Fetch'),
+          child: const Text('Fetch UPC database'),
+        ),
+        const SizedBox(
+          height: 20,
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            searchUPCResult = 'Loading';
+            setState(() {});
+            searchUPCResult = await getSearchUPCData(widget.code);
+            setState(() {});
+          },
+          child: const Text('Fetch Search UPC Database'),
+        ),
+        const SizedBox(
+          height: 20,
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            openFoodFactResult = 'Loading';
+            setState(() {});
+            openFoodFactResult = await getOpenFoodFactData(widget.code);
+            setState(() {});
+          },
+          child: const Text('Fetch Open Food Fact Data'),
         )
       ],
     );
